@@ -1,15 +1,18 @@
 import 'package:flutter/cupertino.dart';
+import 'package:provider/provider.dart';
 import 'package:focus_life/core/themes/app_theme.dart';
 import 'package:focus_life/core/constants/app_constants.dart';
 import 'package:focus_life/presentation/navigation/main_tab_navigator.dart';
+import 'package:focus_life/data/local/hive_service.dart';
+import 'package:focus_life/business/providers/task_provider.dart';
 
 /// 应用主入口
 void main() async {
   // 确保Flutter绑定初始化
   WidgetsFlutterBinding.ensureInitialized();
 
-  // TODO: 初始化Hive数据库
-  // await HiveService.init();
+  // 初始化Hive数据库
+  await HiveService.instance.init();
 
   // TODO: 初始化本地通知
   // await NotificationService.init();
@@ -24,19 +27,31 @@ class FocusLifeApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CupertinoApp(
-      title: AppConstants.appName,
-      theme: AppTheme.lightTheme,
-      home: const MainTabNavigator(),
-      debugShowCheckedModeBanner: false,
-      // 设置本地化
-      localizationsDelegates: const [
-        DefaultCupertinoLocalizations.delegate,
+    return MultiProvider(
+      providers: [
+        // 任务管理Provider
+        ChangeNotifierProvider(
+          create: (_) => TaskProvider()..loadTasks(),
+        ),
+        // TODO: 添加其他Providers
+        // ChangeNotifierProvider(create: (_) => FocusSessionProvider()),
+        // ChangeNotifierProvider(create: (_) => HealthRecordProvider()),
+        // ChangeNotifierProvider(create: (_) => SettingsProvider()),
       ],
-      supportedLocales: const [
-        Locale('zh', 'CN'), // 中文
-        Locale('en', 'US'), // 英文
-      ],
+      child: CupertinoApp(
+        title: AppConstants.appName,
+        theme: AppTheme.lightTheme,
+        home: const MainTabNavigator(),
+        debugShowCheckedModeBanner: false,
+        // 设置本地化
+        localizationsDelegates: const [
+          DefaultCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('zh', 'CN'), // 中文
+          Locale('en', 'US'), // 英文
+        ],
+      ),
     );
   }
 }
