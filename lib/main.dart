@@ -6,6 +6,7 @@ import 'package:focus_life/presentation/navigation/main_tab_navigator.dart';
 import 'package:focus_life/data/local/hive_service.dart';
 import 'package:focus_life/business/providers/task_provider.dart';
 import 'package:focus_life/business/providers/focus_session_provider.dart';
+import 'package:focus_life/business/providers/health_record_provider.dart';
 import 'package:focus_life/core/services/audio_service.dart';
 
 /// 应用主入口
@@ -42,8 +43,11 @@ class FocusLifeApp extends StatelessWidget {
         ChangeNotifierProvider(
           create: (_) => FocusSessionProvider()..loadSettings(),
         ),
+        // 健康记录Provider
+        ChangeNotifierProvider(
+          create: (_) => HealthRecordProvider()..loadTodayRecord(),
+        ),
         // TODO: 添加其他Providers
-        // ChangeNotifierProvider(create: (_) => HealthRecordProvider()),
         // ChangeNotifierProvider(create: (_) => SettingsProvider()),
       ],
       child: CupertinoApp(
