@@ -2,7 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:focus_life/core/themes/app_theme.dart';
 import 'package:focus_life/presentation/screens/home/home_screen.dart';
 import 'package:focus_life/presentation/screens/tasks/task_list_screen.dart';
-import 'package:focus_life/presentation/screens/focus/focus_screen.dart';
+import 'package:focus_life/presentation/screens/focus/focus_timer_screen.dart';
 import 'package:focus_life/presentation/screens/health/health_screen.dart';
 import 'package:focus_life/presentation/screens/statistics/statistics_screen.dart';
 
@@ -64,7 +64,7 @@ class MainTabNavigator extends StatelessWidget {
             screen = const TaskListScreen();
             break;
           case 2:
-            screen = const FocusScreen();
+            screen = const FocusTimerScreen();
             break;
           case 3:
             screen = const HealthScreen();
