@@ -122,6 +122,18 @@ class HealthRecord extends HiveObject {
   @HiveField(11)
   String? notes;
 
+  /// 体重（kg）
+  @HiveField(12)
+  double? weight;
+
+  /// 运动类型
+  @HiveField(13)
+  String? exerciseType;
+
+  /// 心情/情绪
+  @HiveField(14)
+  String? mood;
+
   HealthRecord({
     String? id,
     DateTime? date,
@@ -135,6 +147,9 @@ class HealthRecord extends HiveObject {
     List<MealRecord>? mealRecords,
     this.steps = 0,
     this.notes,
+    this.weight,
+    this.exerciseType,
+    this.mood,
   })  : id = id ?? const Uuid().v4(),
         date = date ?? DateTime.now(),
         waterTimes = waterTimes ?? [],

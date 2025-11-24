@@ -188,6 +188,24 @@ class HealthRecordRepository {
     return totalScore / records.length;
   }
 
+  /// 获取最近N天平均健康评分
+  double getAverageHealthScore({int days = 7}) {
+    final records = getRecentRecords(days: days);
+    if (records.isEmpty) return 0;
+
+    final totalScore = records.fold(0, (sum, record) => sum + record.healthScore);
+    return totalScore / records.length;
+  }
+
+  /// 获取最近N天平均睡眠时长（分钟）
+  double getAverageSleepMinutes({int days = 7}) {
+    final records = getRecentRecords(days: days);
+    if (records.isEmpty) return 0;
+
+    final totalSleep = records.fold(0, (sum, record) => sum + record.sleepMinutes);
+    return totalSleep / records.length;
+  }
+
   /// 获取本月平均健康评分
   double getThisMonthAverageScore() {
     final records = getThisMonthRecords();

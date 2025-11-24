@@ -153,6 +153,21 @@ class AppTheme {
     offset: Offset(0, 4),
   );
 
+  /// 卡片阴影
+  static const BoxShadow cardShadow = BoxShadow(
+    color: Color(0x0F000000),
+    blurRadius: 8.0,
+    offset: Offset(0, 2),
+  );
+
+  // ==================== 额外颜色 ====================
+
+  /// 强调色
+  static const Color accentColor = CupertinoColors.activeBlue;
+
+  /// 错误色
+  static const Color errorColor = CupertinoColors.systemRed;
+
   // ==================== 主题数据 ====================
 
   /// 浅色主题

@@ -19,7 +19,7 @@ class FocusSessionProvider with ChangeNotifier {
   FocusSessionState _state = FocusSessionState.idle;
 
   /// 当前会话类型
-  SessionType _currentSessionType = SessionType.focus;
+  FocusType _currentSessionType = FocusType.pomodoro;
 
   /// 当前会话
   FocusSession? _currentSession;
@@ -60,7 +60,7 @@ class FocusSessionProvider with ChangeNotifier {
   // ==================== Getters ====================
 
   FocusSessionState get state => _state;
-  SessionType get currentSessionType => _currentSessionType;
+  FocusType get currentSessionType => _currentSessionType;
   FocusSession? get currentSession => _currentSession;
   Task? get associatedTask => _associatedTask;
   int get remainingSeconds => _remainingSeconds;
@@ -148,7 +148,7 @@ class FocusSessionProvider with ChangeNotifier {
   Future<void> startFocusSession({Task? task}) async {
     if (_state != FocusSessionState.idle) return;
 
-    _currentSessionType = SessionType.focus;
+    _currentSessionType = FocusType.pomodoro;
     _associatedTask = task;
     _remainingSeconds = _targetMinutes * 60;
     _interruptionCount = 0;
@@ -156,10 +156,8 @@ class FocusSessionProvider with ChangeNotifier {
 
     // 创建新会话
     _currentSession = FocusSession(
-      id: null,
       taskId: task?.id,
-      taskTitle: task?.title,
-      sessionType: SessionType.focus,
+      focusType: FocusType.pomodoro,
       targetMinutes: _targetMinutes,
       startTime: _sessionStartTime!,
     );
@@ -173,14 +171,13 @@ class FocusSessionProvider with ChangeNotifier {
   Future<void> startBreakSession({bool isLongBreak = false}) async {
     if (_state != FocusSessionState.idle) return;
 
-    _currentSessionType = isLongBreak ? SessionType.longBreak : SessionType.shortBreak;
+    _currentSessionType = isLongBreak ? FocusType.longBreak : FocusType.shortBreak;
     _remainingSeconds = (isLongBreak ? _longBreakMinutes : _shortBreakMinutes) * 60;
     _sessionStartTime = DateTime.now();
 
     // 创建新会话
     _currentSession = FocusSession(
-      id: null,
-      sessionType: _currentSessionType,
+      focusType: _currentSessionType,
       targetMinutes: isLongBreak ? _longBreakMinutes : _shortBreakMinutes,
       startTime: _sessionStartTime!,
     );
@@ -218,10 +215,11 @@ class FocusSessionProvider with ChangeNotifier {
 
     // 如果会话已经开始,保存记录
     if (_currentSession != null && _sessionStartTime != null) {
-      final elapsedMinutes = DateTime.now().difference(_sessionStartTime!).inMinutes;
+      // 更新中断次数
+      _currentSession!.interruptionCount = _interruptionCount;
 
       // 完成当前会话
-      _currentSession!.complete(elapsedMinutes, _interruptionCount);
+      _currentSession!.complete();
 
       // 保存到数据库
       await _repository.addFocusSession(_currentSession!);
@@ -238,16 +236,17 @@ class FocusSessionProvider with ChangeNotifier {
   Future<void> completeSession() async {
     if (_currentSession == null || _sessionStartTime == null) return;
 
-    final elapsedMinutes = DateTime.now().difference(_sessionStartTime!).inMinutes;
+    // 更新中断次数
+    _currentSession!.interruptionCount = _interruptionCount;
 
     // 完成当前会话
-    _currentSession!.complete(elapsedMinutes, _interruptionCount);
+    _currentSession!.complete();
 
     // 保存到数据库
     await _repository.addFocusSession(_currentSession!);
 
     // 播放完成音效
-    if (_currentSessionType == SessionType.focus) {
+    if (_currentSessionType == FocusType.pomodoro) {
       await AudioService.instance.playFocusComplete();
       _completedPomodoros++;
     } else {
@@ -275,7 +274,7 @@ class FocusSessionProvider with ChangeNotifier {
 
   /// 跳过休息
   Future<void> skipBreak() async {
-    if (_currentSessionType == SessionType.focus) return;
+    if (_currentSessionType == FocusType.pomodoro) return;
 
     await stopSession();
   }
@@ -364,28 +363,31 @@ enum FocusSessionState {
 }
 
 /// 会话类型扩展
-extension SessionTypeExtension on SessionType {
+extension FocusTypeProviderExtension on FocusType {
   /// 获取会话时长
   int getDurationMinutes(int focus, int shortBreak, int longBreak) {
     switch (this) {
-      case SessionType.focus:
+      case FocusType.pomodoro:
+      case FocusType.custom:
         return focus;
-      case SessionType.shortBreak:
+      case FocusType.shortBreak:
         return shortBreak;
-      case SessionType.longBreak:
+      case FocusType.longBreak:
         return longBreak;
     }
   }
 
-  /// 获取显示名称
-  String get displayName {
+  /// 获取显示名称（提供者专用）
+  String get providerDisplayName {
     switch (this) {
-      case SessionType.focus:
+      case FocusType.pomodoro:
         return '专注';
-      case SessionType.shortBreak:
+      case FocusType.shortBreak:
         return '短休息';
-      case SessionType.longBreak:
+      case FocusType.longBreak:
         return '长休息';
+      case FocusType.custom:
+        return '自定义';
     }
   }
 }

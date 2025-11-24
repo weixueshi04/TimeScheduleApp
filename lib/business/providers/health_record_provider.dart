@@ -124,9 +124,9 @@ class HealthRecordProvider with ChangeNotifier {
 
     _todayRecord!.sleepMinutes = minutes;
     if (bedTime != null) _todayRecord!.bedTime = bedTime;
-    if (wakeUpTime != null) _todayRecord!.wakeUpTime = wakeUpTime;
+    if (wakeUpTime != null) _todayRecord!.wakeTime = wakeUpTime;
 
-    await _repository.updateHealthRecord(_todayRecord!);
+    await _repository.updateRecord(_todayRecord!);
     notifyListeners();
   }
 
@@ -137,7 +137,7 @@ class HealthRecordProvider with ChangeNotifier {
     }
 
     _todayRecord!.bedTime = time;
-    await _repository.updateHealthRecord(_todayRecord!);
+    await _repository.updateRecord(_todayRecord!);
     notifyListeners();
   }
 
@@ -147,7 +147,7 @@ class HealthRecordProvider with ChangeNotifier {
       await loadTodayRecord();
     }
 
-    _todayRecord!.wakeUpTime = time;
+    _todayRecord!.wakeTime = time;
 
     // 如果有就寝时间,自动计算睡眠时长
     if (_todayRecord!.bedTime != null) {
@@ -155,7 +155,7 @@ class HealthRecordProvider with ChangeNotifier {
       _todayRecord!.sleepMinutes = duration.inMinutes;
     }
 
-    await _repository.updateHealthRecord(_todayRecord!);
+    await _repository.updateRecord(_todayRecord!);
     notifyListeners();
   }
 
@@ -168,7 +168,7 @@ class HealthRecordProvider with ChangeNotifier {
     }
 
     _todayRecord!.waterCount++;
-    await _repository.updateHealthRecord(_todayRecord!);
+    await _repository.updateRecord(_todayRecord!);
     notifyListeners();
   }
 
@@ -180,7 +180,7 @@ class HealthRecordProvider with ChangeNotifier {
 
     if (_todayRecord!.waterCount > 0) {
       _todayRecord!.waterCount--;
-      await _repository.updateHealthRecord(_todayRecord!);
+      await _repository.updateRecord(_todayRecord!);
       notifyListeners();
     }
   }
@@ -192,7 +192,7 @@ class HealthRecordProvider with ChangeNotifier {
     }
 
     _todayRecord!.waterCount = count.clamp(0, 20);
-    await _repository.updateHealthRecord(_todayRecord!);
+    await _repository.updateRecord(_todayRecord!);
     notifyListeners();
   }
 
@@ -205,7 +205,7 @@ class HealthRecordProvider with ChangeNotifier {
     }
 
     _todayRecord!.mealRecords.add(meal);
-    await _repository.updateHealthRecord(_todayRecord!);
+    await _repository.updateRecord(_todayRecord!);
     notifyListeners();
   }
 
@@ -215,7 +215,7 @@ class HealthRecordProvider with ChangeNotifier {
 
     if (index >= 0 && index < _todayRecord!.mealRecords.length) {
       _todayRecord!.mealRecords.removeAt(index);
-      await _repository.updateHealthRecord(_todayRecord!);
+      await _repository.updateRecord(_todayRecord!);
       notifyListeners();
     }
   }
@@ -226,7 +226,7 @@ class HealthRecordProvider with ChangeNotifier {
 
     if (index >= 0 && index < _todayRecord!.mealRecords.length) {
       _todayRecord!.mealRecords[index] = meal;
-      await _repository.updateHealthRecord(_todayRecord!);
+      await _repository.updateRecord(_todayRecord!);
       notifyListeners();
     }
   }
@@ -247,7 +247,7 @@ class HealthRecordProvider with ChangeNotifier {
     if (type != null) _todayRecord!.exerciseType = type;
     if (notes != null) _todayRecord!.exerciseNotes = notes;
 
-    await _repository.updateHealthRecord(_todayRecord!);
+    await _repository.updateRecord(_todayRecord!);
     notifyListeners();
   }
 
@@ -258,7 +258,7 @@ class HealthRecordProvider with ChangeNotifier {
     }
 
     _todayRecord!.exerciseMinutes += minutes;
-    await _repository.updateHealthRecord(_todayRecord!);
+    await _repository.updateRecord(_todayRecord!);
     notifyListeners();
   }
 
@@ -271,7 +271,7 @@ class HealthRecordProvider with ChangeNotifier {
     }
 
     _todayRecord!.weight = weight;
-    await _repository.updateHealthRecord(_todayRecord!);
+    await _repository.updateRecord(_todayRecord!);
     notifyListeners();
   }
 
@@ -289,7 +289,7 @@ class HealthRecordProvider with ChangeNotifier {
     }
 
     _todayRecord!.mood = mood.clamp(1, 5);
-    await _repository.updateHealthRecord(_todayRecord!);
+    await _repository.updateRecord(_todayRecord!);
     notifyListeners();
   }
 
@@ -300,7 +300,7 @@ class HealthRecordProvider with ChangeNotifier {
     }
 
     _todayRecord!.moodNotes = notes;
-    await _repository.updateHealthRecord(_todayRecord!);
+    await _repository.updateRecord(_todayRecord!);
     notifyListeners();
   }
 

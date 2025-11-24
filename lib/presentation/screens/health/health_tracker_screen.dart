@@ -296,7 +296,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
       title: '睡眠',
       value: '${provider.todaySleepHours.toStringAsFixed(1)}小时',
       subtitle: provider.todayRecord?.bedTime != null
-          ? '${_formatTime(provider.todayRecord!.bedTime!)} - ${_formatTime(provider.todayRecord!.wakeUpTime ?? DateTime.now())}'
+          ? '${_formatTime(provider.todayRecord!.bedTime!)} - ${_formatTime(provider.todayRecord!.wakeTime ?? DateTime.now())}'
           : '未记录',
       color: AppTheme.primaryColor,
       onTap: () => _showSleepInput(provider),
@@ -540,7 +540,7 @@ class _HealthTrackerScreenState extends State<HealthTrackerScreen> {
   /// 显示睡眠输入
   void _showSleepInput(HealthRecordProvider provider) {
     DateTime? selectedBedTime = provider.todayRecord?.bedTime ?? DateTime.now();
-    DateTime? selectedWakeTime = provider.todayRecord?.wakeUpTime ?? DateTime.now();
+    DateTime? selectedWakeTime = provider.todayRecord?.wakeTime ?? DateTime.now();
 
     showCupertinoModalPopup(
       context: context,
