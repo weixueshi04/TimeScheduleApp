@@ -90,7 +90,6 @@ class MyApp extends StatelessWidget {
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
           useMaterial3: true,
-          fontFamily: 'PingFang',
         ),
         home: Consumer<AuthProvider>(
           builder: (context, authProvider, _) {

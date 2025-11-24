@@ -248,4 +248,14 @@ class WebSocketService {
   void onNotification(Function(Map<String, dynamic>) handler) {
     on(WSEvents.notification, (data) => handler(data as Map<String, dynamic>));
   }
+
+  /// 监听会话开始
+  void onRoomStarted(Function(Map<String, dynamic>) handler) {
+    on(WSEvents.sessionStarted, (data) => handler(data as Map<String, dynamic>));
+  }
+
+  /// 监听会话结束
+  void onRoomEnded(Function(Map<String, dynamic>) handler) {
+    on(WSEvents.sessionEnded, (data) => handler(data as Map<String, dynamic>));
+  }
 }

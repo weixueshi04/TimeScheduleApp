@@ -78,6 +78,9 @@ class StudyRoomRepository {
     }
   }
 
+  /// 获取自习室详情（别名方法）
+  Future<StudyRoom> getStudyRoomDetail(int id) => getStudyRoom(id);
+
   /// 创建自习室
   Future<StudyRoom> createStudyRoom(CreateStudyRoomRequest request) async {
     try {

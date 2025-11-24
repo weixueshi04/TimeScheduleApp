@@ -47,10 +47,3 @@ flutter:
   assets:
     - assets/images/
     - assets/icons/
-
-  fonts:
-    - family: PingFang
-      fonts:
-        - asset: assets/fonts/PingFang-Regular.ttf
-        - asset: assets/fonts/PingFang-Bold.ttf
-          weight: 700
