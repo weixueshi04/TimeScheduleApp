@@ -71,6 +71,53 @@ class StudyRoom extends Equatable {
     return diff.inMinutes;
   }
 
+  /// 复制并修改部分属性
+  StudyRoom copyWith({
+    int? id,
+    String? roomCode,
+    int? creatorId,
+    String? name,
+    String? description,
+    String? roomType,
+    int? maxParticipants,
+    int? durationMinutes,
+    DateTime? scheduledStartTime,
+    DateTime? scheduledEndTime,
+    String? status,
+    int? currentParticipants,
+    Map<String, dynamic>? matchingCriteria,
+    DateTime? createdAt,
+    DateTime? startedAt,
+    DateTime? endedAt,
+    String? creatorUsername,
+    String? creatorNickname,
+    String? creatorAvatar,
+    List<Participant>? participants,
+  }) {
+    return StudyRoom(
+      id: id ?? this.id,
+      roomCode: roomCode ?? this.roomCode,
+      creatorId: creatorId ?? this.creatorId,
+      name: name ?? this.name,
+      description: description ?? this.description,
+      roomType: roomType ?? this.roomType,
+      maxParticipants: maxParticipants ?? this.maxParticipants,
+      durationMinutes: durationMinutes ?? this.durationMinutes,
+      scheduledStartTime: scheduledStartTime ?? this.scheduledStartTime,
+      scheduledEndTime: scheduledEndTime ?? this.scheduledEndTime,
+      status: status ?? this.status,
+      currentParticipants: currentParticipants ?? this.currentParticipants,
+      matchingCriteria: matchingCriteria ?? this.matchingCriteria,
+      createdAt: createdAt ?? this.createdAt,
+      startedAt: startedAt ?? this.startedAt,
+      endedAt: endedAt ?? this.endedAt,
+      creatorUsername: creatorUsername ?? this.creatorUsername,
+      creatorNickname: creatorNickname ?? this.creatorNickname,
+      creatorAvatar: creatorAvatar ?? this.creatorAvatar,
+      participants: participants ?? this.participants,
+    );
+  }
+
   @override
   List<Object?> get props => [
         id,

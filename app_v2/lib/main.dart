@@ -1,11 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+// Providers
 import 'business/providers/auth_provider.dart';
+import 'business/providers/study_room_provider.dart';
+import 'business/providers/task_provider.dart';
+
+// Repositories
 import 'data/repositories/auth_repository.dart';
 import 'data/repositories/study_room_repository.dart';
+import 'data/repositories/task_repository.dart';
+import 'data/repositories/focus_repository.dart';
+import 'data/repositories/health_repository.dart';
+
+// Services
 import 'data/services/api_client.dart';
 import 'data/services/token_service.dart';
 import 'data/services/websocket_service.dart';
+
+// Screens
+import 'presentation/screens/study_room_list_screen.dart';
+import 'presentation/screens/create_study_room_screen.dart';
+import 'presentation/screens/task_list_screen.dart';
+import 'presentation/screens/focus_timer_screen.dart';
+import 'presentation/screens/health_management_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -27,19 +45,44 @@ class MyApp extends StatelessWidget {
       tokenService: tokenService,
     );
     final studyRoomRepository = StudyRoomRepository(apiClient: apiClient);
+    final taskRepository = TaskRepository(apiClient: apiClient);
+    final focusRepository = FocusRepository(apiClient: apiClient);
+    final healthRepository = HealthRepository(apiClient: apiClient);
 
     return MultiProvider(
       providers: [
-        // 认证Provider
+        // Services
+        Provider.value(value: wsService),
+        Provider.value(value: apiClient),
+
+        // Repositories
+        Provider.value(value: studyRoomRepository),
+        Provider.value(value: taskRepository),
+        Provider.value(value: focusRepository),
+        Provider.value(value: healthRepository),
+
+        // Auth Provider (with initialization)
         ChangeNotifierProvider(
           create: (_) => AuthProvider(
             authRepository: authRepository,
             wsService: wsService,
           )..initialize(),
         ),
-        // 提供Repository给子组件使用
-        Provider.value(value: studyRoomRepository),
-        Provider.value(value: wsService),
+
+        // Study Room Provider
+        ChangeNotifierProvider(
+          create: (_) => StudyRoomProvider(
+            repository: studyRoomRepository,
+            wsService: wsService,
+          ),
+        ),
+
+        // Task Provider
+        ChangeNotifierProvider(
+          create: (_) => TaskProvider(
+            repository: taskRepository,
+          ),
+        ),
       ],
       child: MaterialApp(
         title: 'TimeScheduleApp v2.0',
@@ -422,7 +465,12 @@ class HomeScreen extends StatelessWidget {
                   title: '网络自习室',
                   subtitle: '加入自习',
                   onTap: () {
-                    // TODO: 导航到自习室列表
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const StudyRoomListScreen(),
+                      ),
+                    );
                   },
                 ),
                 _buildMenuCard(
@@ -430,7 +478,12 @@ class HomeScreen extends StatelessWidget {
                   title: '任务管理',
                   subtitle: '管理任务',
                   onTap: () {
-                    // TODO: 导航到任务列表
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const TaskListScreen(),
+                      ),
+                    );
                   },
                 ),
                 _buildMenuCard(
@@ -438,7 +491,12 @@ class HomeScreen extends StatelessWidget {
                   title: '专注计时',
                   subtitle: '番茄钟',
                   onTap: () {
-                    // TODO: 导航到专注计时
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const FocusTimerScreen(),
+                      ),
+                    );
                   },
                 ),
                 _buildMenuCard(
@@ -446,7 +504,12 @@ class HomeScreen extends StatelessWidget {
                   title: '健康管理',
                   subtitle: '记录健康',
                   onTap: () {
-                    // TODO: 导航到健康管理
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const HealthManagementScreen(),
+                      ),
+                    );
                   },
                 ),
               ],
@@ -457,7 +520,12 @@ class HomeScreen extends StatelessWidget {
       floatingActionButton: user?.studyRoomEligibility?.canCreateStudyRoom == true
           ? FloatingActionButton.extended(
               onPressed: () {
-                // TODO: 导航到创建自习室页面
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CreateStudyRoomScreen(),
+                  ),
+                );
               },
               icon: const Icon(Icons.add),
               label: const Text('创建自习室'),
