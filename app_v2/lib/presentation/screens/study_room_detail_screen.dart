@@ -260,7 +260,6 @@ class _StudyRoomDetailScreenState extends State<StudyRoomDetailScreen> {
   }
 
   Widget _buildRoomInfoCard(StudyRoom room) {
-    final now = DateTime.now();
     final isActive = room.status == 'active';
     final remainingMinutes = room.remainingMinutes;
 

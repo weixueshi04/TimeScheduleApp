@@ -178,14 +178,6 @@ class StudyRoomProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      final request = CreateStudyRoomRequest(
-        name: '匹配自习室',
-        durationMinutes: durationMinutes,
-        scheduledStartTime: scheduledStartTime,
-        maxParticipants: 4,
-        taskCategory: taskCategory,
-      );
-
       // Send matching request
       _wsService.emit('start_matching', {
         'durationMinutes': durationMinutes,
@@ -320,7 +312,7 @@ class StudyRoomProvider with ChangeNotifier {
     try {
       final room = await _repository.getStudyRoomDetail(_currentRoom!.id);
       _currentRoom = room;
-      _roomParticipants[room.id] = room.participants;
+      _roomParticipants[room.id] = room.participants ?? [];
       notifyListeners();
     } catch (e) {
       // Silently fail, keep current data
