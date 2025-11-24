@@ -1,337 +1,241 @@
 import 'package:flutter/foundation.dart';
-import 'package:focus_life/data/models/task_model.dart';
-import 'package:focus_life/data/repositories/task_repository.dart';
+import '../../data/models/task.dart';
+import '../../data/repositories/task_repository.dart';
 
-/// 任务状态管理Provider
-///
-/// 负责管理任务的状态和业务逻辑
+enum TaskLoadingStatus {
+  initial,
+  loading,
+  loaded,
+  error,
+}
+
 class TaskProvider with ChangeNotifier {
-  final TaskRepository _repository = TaskRepository();
+  final TaskRepository _repository;
 
-  // ==================== 状态变量 ====================
+  TaskProvider({required TaskRepository repository}) : _repository = repository;
 
-  /// 所有任务列表
+  // State
+  TaskLoadingStatus _status = TaskLoadingStatus.initial;
   List<Task> _tasks = [];
-
-  /// 当前筛选条件
-  TaskFilter _currentFilter = TaskFilter.all;
-
-  /// 当前排序方式
-  TaskSortType _currentSort = TaskSortType.priority;
-
-  /// 是否正在加载
+  List<Task> _todayTasks = [];
+  TaskStats? _stats;
+  String? _errorMessage;
   bool _isLoading = false;
 
-  /// 搜索关键词
-  String _searchQuery = '';
+  // Filter state
+  String _filterStatus = 'all'; // all, pending, in_progress, completed
+  String? _filterCategory;
 
-  // ==================== Getters ====================
-
-  /// 获取所有任务
-  List<Task> get tasks => _tasks;
-
-  /// 获取筛选后的任务
-  List<Task> get filteredTasks => _filterTasks();
-
-  /// 获取当前筛选条件
-  TaskFilter get currentFilter => _currentFilter;
-
-  /// 获取当前排序方式
-  TaskSortType get currentSort => _currentSort;
-
-  /// 是否正在加载
+  // Getters
+  TaskLoadingStatus get status => _status;
+  List<Task> get tasks => _filterTasks(_tasks);
+  List<Task> get todayTasks => _todayTasks;
+  TaskStats? get stats => _stats;
+  String? get errorMessage => _errorMessage;
   bool get isLoading => _isLoading;
+  String get filterStatus => _filterStatus;
+  String? get filterCategory => _filterCategory;
 
-  /// 搜索关键词
-  String get searchQuery => _searchQuery;
+  // Filter tasks
+  List<Task> _filterTasks(List<Task> tasks) {
+    return tasks.where((task) {
+      // Filter by status
+      if (_filterStatus != 'all') {
+        if (_filterStatus == 'completed' && !task.isCompleted) return false;
+        if (_filterStatus == 'pending' && task.status != 'pending') return false;
+        if (_filterStatus == 'in_progress' && task.status != 'in_progress') {
+          return false;
+        }
+      }
 
-  /// 获取未完成任务数量
-  int get pendingCount => _repository.getPendingTasksCount();
+      // Filter by category
+      if (_filterCategory != null && task.category != _filterCategory) {
+        return false;
+      }
 
-  /// 获取已完成任务数量
-  int get completedCount => _repository.getCompletedTasksCount();
+      return true;
+    }).toList();
+  }
 
-  /// 获取总任务数量
-  int get totalCount => _repository.getTotalTasksCount();
+  // Set filter
+  void setFilter({String? status, String? category}) {
+    if (status != null) _filterStatus = status;
+    if (category != null) {
+      _filterCategory = category == 'all' ? null : category;
+    }
+    notifyListeners();
+  }
 
-  /// 获取完成率
-  double get completionRate => _repository.getCompletionRate();
-
-  /// 获取今日任务
-  List<Task> get todayTasks => _repository.getTodayTasks();
-
-  /// 获取本周任务
-  List<Task> get weekTasks => _repository.getThisWeekTasks();
-
-  /// 获取超期任务
-  List<Task> get overdueTasks => _repository.getOverdueTasks();
-
-  /// 获取需要关注的任务
-  List<Task> get focusTasks => _repository.getFocusTasks();
-
-  // ==================== 初始化 ====================
-
-  /// 加载所有任务
-  Future<void> loadTasks() async {
+  // Fetch all tasks
+  Future<void> fetchTasks() async {
+    _setStatus(TaskLoadingStatus.loading);
     _isLoading = true;
     notifyListeners();
 
     try {
-      _tasks = _repository.getAllTasks();
+      _tasks = await _repository.getTasks();
+      _setStatus(TaskLoadingStatus.loaded);
+      _errorMessage = null;
+    } catch (e) {
+      _setStatus(TaskLoadingStatus.error);
+      _errorMessage = e.toString();
+    } finally {
       _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Fetch today's tasks
+  Future<void> fetchTodayTasks() async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      _todayTasks = await _repository.getTodayTasks();
+      _errorMessage = null;
+    } catch (e) {
+      _errorMessage = e.toString();
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
+
+  // Fetch stats
+  Future<void> fetchStats() async {
+    try {
+      _stats = await _repository.getTaskStats();
       notifyListeners();
     } catch (e) {
+      _errorMessage = e.toString();
+    }
+  }
+
+  // Create task
+  Future<Task?> createTask(CreateTaskRequest request) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      final task = await _repository.createTask(request);
+      _tasks.insert(0, task);
+      _errorMessage = null;
+      notifyListeners();
+      return task;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return null;
+    } finally {
       _isLoading = false;
       notifyListeners();
-      rethrow;
     }
   }
 
-  /// 刷新任务列表
-  Future<void> refresh() async {
-    await loadTasks();
-  }
+  // Update task
+  Future<bool> updateTask(int taskId, UpdateTaskRequest request) async {
+    _isLoading = true;
+    notifyListeners();
 
-  // ==================== CRUD操作 ====================
+    try {
+      final updatedTask = await _repository.updateTask(taskId, request);
 
-  /// 添加任务
-  Future<void> addTask(Task task) async {
-    await _repository.addTask(task);
-    await loadTasks();
-  }
+      // Update in list
+      final index = _tasks.indexWhere((t) => t.id == taskId);
+      if (index != -1) {
+        _tasks[index] = updatedTask;
+      }
 
-  /// 更新任务
-  Future<void> updateTask(Task task) async {
-    await _repository.updateTask(task);
-    await loadTasks();
-  }
-
-  /// 删除任务
-  Future<void> deleteTask(String taskId) async {
-    await _repository.deleteTask(taskId);
-    await loadTasks();
-  }
-
-  /// 批量删除任务
-  Future<void> deleteTasks(List<String> taskIds) async {
-    await _repository.deleteTasks(taskIds);
-    await loadTasks();
-  }
-
-  /// 删除所有已完成任务
-  Future<void> deleteAllCompletedTasks() async {
-    await _repository.deleteAllCompletedTasks();
-    await loadTasks();
-  }
-
-  // ==================== 任务状态操作 ====================
-
-  /// 切换任务完成状态
-  Future<void> toggleTaskCompletion(String taskId) async {
-    final task = _repository.getTaskById(taskId);
-    if (task == null) return;
-
-    if (task.isCompleted) {
-      await _repository.markTaskAsIncomplete(taskId);
-    } else {
-      await _repository.markTaskAsCompleted(taskId);
+      _errorMessage = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
     }
-
-    await loadTasks();
   }
 
-  /// 标记任务为完成
-  Future<void> markTaskAsCompleted(String taskId) async {
-    await _repository.markTaskAsCompleted(taskId);
-    await loadTasks();
+  // Delete task
+  Future<bool> deleteTask(int taskId) async {
+    _isLoading = true;
+    notifyListeners();
+
+    try {
+      await _repository.deleteTask(taskId);
+
+      // Remove from list
+      _tasks.removeWhere((t) => t.id == taskId);
+      _todayTasks.removeWhere((t) => t.id == taskId);
+
+      _errorMessage = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
   }
 
-  /// 标记任务为未完成
-  Future<void> markTaskAsIncomplete(String taskId) async {
-    await _repository.markTaskAsIncomplete(taskId);
-    await loadTasks();
+  // Toggle task completion
+  Future<bool> toggleTaskCompletion(int taskId, bool isCompleted) async {
+    try {
+      final updatedTask = isCompleted
+          ? await _repository.completeTask(taskId)
+          : await _repository.uncompleteTask(taskId);
+
+      // Update in list
+      final index = _tasks.indexWhere((t) => t.id == taskId);
+      if (index != -1) {
+        _tasks[index] = updatedTask;
+      }
+
+      // Update in today's tasks
+      final todayIndex = _todayTasks.indexWhere((t) => t.id == taskId);
+      if (todayIndex != -1) {
+        _todayTasks[todayIndex] = updatedTask;
+      }
+
+      _errorMessage = null;
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _errorMessage = e.toString();
+      notifyListeners();
+      return false;
+    }
   }
 
-  /// 更新任务实际用时
-  Future<void> updateTaskActualTime(String taskId, int minutes) async {
-    await _repository.updateTaskActualTime(taskId, minutes);
-    await loadTasks();
-  }
-
-  // ==================== 筛选和排序 ====================
-
-  /// 设置筛选条件
-  void setFilter(TaskFilter filter) {
-    _currentFilter = filter;
+  // Helper to set status
+  void _setStatus(TaskLoadingStatus status) {
+    _status = status;
     notifyListeners();
   }
 
-  /// 设置排序方式
-  void setSort(TaskSortType sort) {
-    _currentSort = sort;
-    notifyListeners();
+  // Get tasks by category
+  List<Task> getTasksByCategory(String category) {
+    return _tasks.where((task) => task.category == category).toList();
   }
 
-  /// 设置搜索关键词
-  void setSearchQuery(String query) {
-    _searchQuery = query;
-    notifyListeners();
+  // Get completed tasks count
+  int get completedTasksCount {
+    return _tasks.where((task) => task.isCompleted).length;
   }
 
-  /// 清除搜索
-  void clearSearch() {
-    _searchQuery = '';
-    notifyListeners();
+  // Get pending tasks count
+  int get pendingTasksCount {
+    return _tasks.where((task) => !task.isCompleted).length;
   }
 
-  /// 根据当前条件筛选任务
-  List<Task> _filterTasks() {
-    List<Task> result = _tasks;
-
-    // 搜索筛选
-    if (_searchQuery.isNotEmpty) {
-      result = _repository.searchTasks(_searchQuery);
-    }
-
-    // 分类筛选
-    switch (_currentFilter) {
-      case TaskFilter.all:
-        // 显示所有任务
-        break;
-      case TaskFilter.pending:
-        result = result.where((task) => !task.isCompleted).toList();
-        break;
-      case TaskFilter.completed:
-        result = result.where((task) => task.isCompleted).toList();
-        break;
-      case TaskFilter.today:
-        result = _repository.getTodayTasks();
-        break;
-      case TaskFilter.week:
-        result = _repository.getThisWeekTasks();
-        break;
-      case TaskFilter.overdue:
-        result = result.where((task) => task.isOverdue).toList();
-        break;
-      case TaskFilter.focus:
-        result = _repository.getFocusTasks();
-        break;
-      case TaskFilter.work:
-        result = result.where((task) => task.category == TaskCategory.work).toList();
-        break;
-      case TaskFilter.study:
-        result = result.where((task) => task.category == TaskCategory.study).toList();
-        break;
-      case TaskFilter.life:
-        result = result.where((task) => task.category == TaskCategory.life).toList();
-        break;
-      case TaskFilter.health:
-        result = result.where((task) => task.category == TaskCategory.health).toList();
-        break;
-    }
-
-    // 排序
-    switch (_currentSort) {
-      case TaskSortType.priority:
-        result = _repository.sortTasksByPriority(result);
-        break;
-      case TaskSortType.dueDate:
-        result = _repository.sortTasksByDueDate(result);
-        break;
-      case TaskSortType.createdDate:
-        result = _repository.sortTasksByCreatedDate(result);
-        break;
-      case TaskSortType.updatedDate:
-        result = _repository.sortTasksByUpdatedDate(result);
-        break;
-    }
-
-    return result;
-  }
-
-  // ==================== 统计信息 ====================
-
-  /// 获取各分类的任务数量
-  Map<TaskCategory, int> getCategoryStats() {
-    return _repository.getTasksCountByCategory();
-  }
-
-  /// 获取各优先级的任务数量
-  Map<TaskPriority, int> getPriorityStats() {
-    return _repository.getTasksCountByPriority();
-  }
-
-  /// 获取平均时间效率
-  double getAverageTimeEfficiency() {
-    return _repository.getAverageTimeEfficiency();
-  }
-}
-
-/// 任务筛选类型
-enum TaskFilter {
-  all, // 全部
-  pending, // 未完成
-  completed, // 已完成
-  today, // 今天
-  week, // 本周
-  overdue, // 已超期
-  focus, // 需要关注
-  work, // 工作
-  study, // 学习
-  life, // 生活
-  health, // 健康
-}
-
-/// 任务排序类型
-enum TaskSortType {
-  priority, // 按优先级
-  dueDate, // 按截止日期
-  createdDate, // 按创建时间
-  updatedDate, // 按更新时间
-}
-
-/// 筛选类型扩展
-extension TaskFilterExtension on TaskFilter {
-  String get displayName {
-    switch (this) {
-      case TaskFilter.all:
-        return '全部';
-      case TaskFilter.pending:
-        return '未完成';
-      case TaskFilter.completed:
-        return '已完成';
-      case TaskFilter.today:
-        return '今天';
-      case TaskFilter.week:
-        return '本周';
-      case TaskFilter.overdue:
-        return '已超期';
-      case TaskFilter.focus:
-        return '需关注';
-      case TaskFilter.work:
-        return '工作';
-      case TaskFilter.study:
-        return '学习';
-      case TaskFilter.life:
-        return '生活';
-      case TaskFilter.health:
-        return '健康';
-    }
-  }
-}
-
-/// 排序类型扩展
-extension TaskSortTypeExtension on TaskSortType {
-  String get displayName {
-    switch (this) {
-      case TaskSortType.priority:
-        return '优先级';
-      case TaskSortType.dueDate:
-        return '截止日期';
-      case TaskSortType.createdDate:
-        return '创建时间';
-      case TaskSortType.updatedDate:
-        return '更新时间';
-    }
+  // Get overdue tasks count
+  int get overdueTasksCount {
+    return _tasks.where((task) => task.isOverdue).length;
   }
 }

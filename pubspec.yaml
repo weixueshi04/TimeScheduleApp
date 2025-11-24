@@ -1,7 +1,6 @@
-name: focus_life
-description: 时间与健康管理APP - FocusLife专注生活
-publish_to: 'none'
-version: 1.0.0+1
+name: timeschedule_app
+description: TimeScheduleApp v2.0 - 有温度的网络自习室
+version: 2.0.0+1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -10,46 +9,42 @@ dependencies:
   flutter:
     sdk: flutter
 
-  cupertino_icons: ^1.0.6
-
   # 状态管理
   provider: ^6.1.1
 
+  # 网络请求
+  dio: ^5.4.0
+  socket_io_client: ^2.0.3+1
+
   # 本地存储
-  hive: ^2.2.3
-  hive_flutter: ^1.1.0
   shared_preferences: ^2.2.2
+  flutter_secure_storage: ^9.0.0
 
   # UI组件
-  table_calendar: ^3.0.9
-  fl_chart: ^0.66.0
-
-  # 通知
-  flutter_local_notifications: ^16.3.0
-
-  # 音频
-  audioplayers: ^5.2.1
+  cupertino_icons: ^1.0.6
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.1
+  shimmer: ^3.0.0
 
   # 工具类
   intl: ^0.18.1
   uuid: ^4.3.3
+  logger: ^2.0.2+1
 
-  # 路径提供者
-  path_provider: ^2.1.2
+  # 数据模型
+  json_annotation: ^4.8.1
+  equatable: ^2.0.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
-
-  # Hive代码生成
-  hive_generator: ^2.0.1
-  build_runner: ^2.4.8
+  flutter_lints: ^3.0.1
+  build_runner: ^2.4.7
+  json_serializable: ^6.7.1
 
 flutter:
   uses-material-design: true
 
-  # 资源文件
   assets:
     - assets/images/
-    - assets/sounds/
+    - assets/icons/

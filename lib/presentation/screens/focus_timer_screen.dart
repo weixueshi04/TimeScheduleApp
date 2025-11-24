@@ -444,7 +444,7 @@ class _FocusTimerScreenState extends State<FocusTimerScreen> with TickerProvider
                     fontSize: 56,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
-                    fontFeatures: [FontFeature.tabularFigures()],
+                    // fontFeatures: [FontFeature.tabularFigures()], // Removed: FontFeature not available
                   ),
                 ),
                 const SizedBox(height: 8),
