@@ -1,0 +1,56 @@
+name: timeschedule_app_v2
+description: TimeScheduleApp v2.0 - 有温度的网络自习室
+version: 2.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # 状态管理
+  provider: ^6.1.1
+
+  # 网络请求
+  dio: ^5.4.0
+  socket_io_client: ^2.0.3+1
+
+  # 本地存储
+  shared_preferences: ^2.2.2
+  flutter_secure_storage: ^9.0.0
+
+  # UI组件
+  cupertino_icons: ^1.0.6
+  flutter_svg: ^2.0.9
+  cached_network_image: ^3.3.1
+
+  # 工具类
+  intl: ^0.18.1
+  uuid: ^4.3.3
+  logger: ^2.0.2+1
+
+  # 数据模型
+  json_annotation: ^4.8.1
+  equatable: ^2.0.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  build_runner: ^2.4.7
+  json_serializable: ^6.7.1
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+    - assets/icons/
+
+  fonts:
+    - family: PingFang
+      fonts:
+        - asset: assets/fonts/PingFang-Regular.ttf
+        - asset: assets/fonts/PingFang-Bold.ttf
+          weight: 700
