@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:logger/logger.dart';
 import '../../core/constants/api_constants.dart';
@@ -8,6 +9,10 @@ class ApiClient {
   late final Dio _dio;
   final TokenService _tokenService;
   final Logger _logger = Logger();
+
+  // Token刷新锁，防止并发请求重复刷新
+  bool _isRefreshing = false;
+  final List<void Function(String?)> _refreshCallbacks = [];
 
   ApiClient(this._tokenService) {
     _dio = Dio(BaseOptions(
@@ -29,21 +34,62 @@ class ApiClient {
   Interceptor _createAuthInterceptor() {
     return InterceptorsWrapper(
       onRequest: (options, handler) async {
-        // 获取访问令牌
-        final token = await _tokenService.getAccessToken();
-        if (token != null) {
-          options.headers[ApiConstants.authorizationHeader] = 'Bearer $token';
+        // 跳过刷新token的请求
+        if (options.path.contains(ApiConstants.authRefresh)) {
+          return handler.next(options);
         }
+
+        // 主动检查token是否需要刷新
+        final shouldRefresh = await _tokenService.shouldRefreshToken();
+        if (shouldRefresh) {
+          _logger.i('Token needs refresh before request');
+
+          // 如果正在刷新，等待刷新完成
+          if (_isRefreshing) {
+            _logger.d('Token refresh in progress, waiting...');
+            final newToken = await _waitForTokenRefresh();
+            if (newToken != null) {
+              options.headers[ApiConstants.authorizationHeader] =
+                  'Bearer $newToken';
+            }
+          } else {
+            // 执行token刷新
+            final newToken = await _performTokenRefresh();
+            if (newToken != null) {
+              options.headers[ApiConstants.authorizationHeader] =
+                  'Bearer $newToken';
+            } else {
+              // 刷新失败，清除token并返回错误
+              await _tokenService.clearTokens();
+              return handler.reject(
+                DioException(
+                  requestOptions: options,
+                  error: 'Token refresh failed',
+                  type: DioExceptionType.badResponse,
+                ),
+              );
+            }
+          }
+        } else {
+          // Token不需要刷新，正常添加token
+          final token = await _tokenService.getAccessToken();
+          if (token != null) {
+            options.headers[ApiConstants.authorizationHeader] =
+                'Bearer $token';
+          }
+        }
+
         handler.next(options);
       },
       onError: (error, handler) async {
         // 401错误，尝试刷新token
         if (error.response?.statusCode == 401) {
-          _logger.w('Access token expired, attempting to refresh...');
+          _logger.w('Got 401 error, attempting to refresh token...');
 
-          try {
-            // 刷新token
-            final newToken = await _refreshToken();
+          // 如果正在刷新，等待刷新完成
+          if (_isRefreshing) {
+            _logger.d('Token refresh in progress, waiting...');
+            final newToken = await _waitForTokenRefresh();
 
             if (newToken != null) {
               // 重试原请求
@@ -51,13 +97,33 @@ class ApiClient {
               options.headers[ApiConstants.authorizationHeader] =
                   'Bearer $newToken';
 
-              final response = await _dio.fetch(options);
-              return handler.resolve(response);
+              try {
+                final response = await _dio.fetch(options);
+                return handler.resolve(response);
+              } catch (e) {
+                _logger.e('Retry request failed: $e');
+              }
             }
-          } catch (e) {
-            _logger.e('Token refresh failed: $e');
-            // 清除token，需要重新登录
-            await _tokenService.clearTokens();
+          } else {
+            // 执行token刷新
+            final newToken = await _performTokenRefresh();
+
+            if (newToken != null) {
+              // 重试原请求
+              final options = error.requestOptions;
+              options.headers[ApiConstants.authorizationHeader] =
+                  'Bearer $newToken';
+
+              try {
+                final response = await _dio.fetch(options);
+                return handler.resolve(response);
+              } catch (e) {
+                _logger.e('Retry request failed: $e');
+              }
+            } else {
+              // 刷新失败，清除token
+              await _tokenService.clearTokens();
+            }
           }
         }
 
@@ -95,7 +161,7 @@ class ApiClient {
     );
   }
 
-  /// 刷新访问令牌
+  /// 刷新访问令牌（原有方法）
   Future<String?> _refreshToken() async {
     try {
       final refreshToken = await _tokenService.getRefreshToken();
@@ -127,6 +193,57 @@ class ApiClient {
       _logger.e('Error refreshing token: $e');
       return null;
     }
+  }
+
+  /// 执行Token刷新（带锁，防止并发）
+  Future<String?> _performTokenRefresh() async {
+    if (_isRefreshing) {
+      _logger.w('Token refresh already in progress');
+      return _waitForTokenRefresh();
+    }
+
+    _isRefreshing = true;
+    _logger.i('Starting token refresh...');
+
+    try {
+      final newToken = await _refreshToken();
+
+      // 通知所有等待的回调
+      for (final callback in _refreshCallbacks) {
+        callback(newToken);
+      }
+      _refreshCallbacks.clear();
+
+      return newToken;
+    } finally {
+      _isRefreshing = false;
+    }
+  }
+
+  /// 等待Token刷新完成
+  Future<String?> _waitForTokenRefresh() async {
+    if (!_isRefreshing) {
+      _logger.w('No token refresh in progress');
+      return await _tokenService.getAccessToken();
+    }
+
+    // 创建一个Future，等待刷新完成
+    final completer = Completer<String?>();
+
+    _refreshCallbacks.add((newToken) {
+      if (!completer.isCompleted) {
+        completer.complete(newToken);
+      }
+    });
+
+    // 设置超时（30秒）
+    return completer.future.timeout(
+      const Duration(seconds: 30),
+      onTimeout: () {
+        _logger.e('Token refresh wait timeout');
+        return null;
+      },
+    );
   }
 
   /// GET请求

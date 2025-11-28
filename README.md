@@ -102,8 +102,9 @@
 - [ ] 全面测试并发布
 
 **已完成迭代**:
-- ✅ 迭代1: 基础功能实现 (2025-11-23)
-- ✅ 迭代2: 通用UI组件库 (2025-11-25)
+- ✅ 迭代1: 代码结构统一 (2025-11-24)
+- ✅ 迭代2: 核心功能UI完善 (2025-11-25)
+- ✅ 迭代3: 稳定性和性能增强 (2025-11-28)
 
 ### 阶段2: 添加后端基础设施 (8周)
 - [ ] 搭建Node.js/Go服务器
@@ -167,9 +168,9 @@
 | [BUILD_INSTRUCTIONS.md](./BUILD_INSTRUCTIONS.md) | 构建和运行指南 | ✅ |
 | [PROJECT_FINAL_REPORT.md](./PROJECT_FINAL_REPORT.md) | v1.0开发完成报告 | ✅ |
 | [PRODUCT_ROADMAP_V2.md](./PRODUCT_ROADMAP_V2.md) | v2.0产品路线图 | ✅ |
-| [docs/进度总结.md](./docs/进度总结.md) | 开发进度汇总 | ✅ |
-| [docs/迭代1完成报告.md](./docs/迭代1完成报告.md) | 迭代1详细报告 | ✅ |
-| [docs/迭代2完成报告.md](./docs/迭代2完成报告.md) | 迭代2详细报告 | ✅ |
+| [ITERATION1_COMPLETE_REPORT.md](./ITERATION1_COMPLETE_REPORT.md) | 迭代1完成报告 | ✅ |
+| [ITERATION2_COMPLETE_REPORT.md](./ITERATION2_COMPLETE_REPORT.md) | 迭代2完成报告 | ✅ |
+| [ITERATION3_COMPLETE_REPORT.md](./ITERATION3_COMPLETE_REPORT.md) | 迭代3完成报告 | ✅ |
 | TECH_ARCHITECTURE.md | 技术架构设计 | ⏳ 待创建 |
 | DATABASE_DESIGN.md | 数据库设计文档 | ⏳ 待创建 |
 | API_DOCUMENTATION.md | API接口文档 | ⏳ 待创建 |

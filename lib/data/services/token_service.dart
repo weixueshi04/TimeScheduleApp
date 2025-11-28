@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:logger/logger.dart';
 import '../../core/constants/api_constants.dart';
@@ -6,6 +7,12 @@ import '../../core/constants/api_constants.dart';
 class TokenService {
   final FlutterSecureStorage _secureStorage;
   final Logger _logger = Logger();
+
+  // Token过期时间的key
+  static const String _tokenExpiryKey = 'token_expiry';
+
+  // Token刷新的提前时间（5分钟）
+  static const Duration _refreshBeforeExpiry = Duration(minutes: 5);
 
   TokenService({FlutterSecureStorage? secureStorage})
       : _secureStorage = secureStorage ?? const FlutterSecureStorage();
@@ -17,7 +24,18 @@ class TokenService {
         key: ApiConstants.accessTokenKey,
         value: token,
       );
-      _logger.d('Access token saved');
+
+      // 解析并保存token过期时间
+      final expiryTime = _parseTokenExpiry(token);
+      if (expiryTime != null) {
+        await _secureStorage.write(
+          key: _tokenExpiryKey,
+          value: expiryTime.toIso8601String(),
+        );
+        _logger.d('Access token saved with expiry: $expiryTime');
+      } else {
+        _logger.d('Access token saved (no expiry parsed)');
+      }
     } catch (e) {
       _logger.e('Error saving access token: $e');
       rethrow;
@@ -104,6 +122,7 @@ class TokenService {
         _secureStorage.delete(key: ApiConstants.accessTokenKey),
         _secureStorage.delete(key: ApiConstants.refreshTokenKey),
         _secureStorage.delete(key: ApiConstants.userIdKey),
+        _secureStorage.delete(key: _tokenExpiryKey),
       ]);
       _logger.i('All tokens cleared');
     } catch (e) {
@@ -116,5 +135,101 @@ class TokenService {
   Future<bool> isLoggedIn() async {
     final accessToken = await getAccessToken();
     return accessToken != null && accessToken.isNotEmpty;
+  }
+
+  /// 解析JWT Token的过期时间
+  DateTime? _parseTokenExpiry(String token) {
+    try {
+      // JWT格式: header.payload.signature
+      final parts = token.split('.');
+      if (parts.length != 3) {
+        _logger.w('Invalid JWT token format');
+        return null;
+      }
+
+      // 解码payload部分（base64）
+      final payload = parts[1];
+      // 添加padding（base64解码需要）
+      final normalizedPayload = base64Url.normalize(payload);
+      final payloadString = utf8.decode(base64Url.decode(normalizedPayload));
+      final payloadMap = json.decode(payloadString) as Map<String, dynamic>;
+
+      // 获取exp字段（Unix时间戳，秒）
+      final exp = payloadMap['exp'];
+      if (exp == null) {
+        _logger.w('No exp field in token payload');
+        return null;
+      }
+
+      // 转换为DateTime
+      return DateTime.fromMillisecondsSinceEpoch(
+        (exp as int) * 1000,
+        isUtc: true,
+      );
+    } catch (e) {
+      _logger.e('Error parsing token expiry: $e');
+      return null;
+    }
+  }
+
+  /// 获取Token过期时间
+  Future<DateTime?> getTokenExpiry() async {
+    try {
+      final expiryStr = await _secureStorage.read(key: _tokenExpiryKey);
+      if (expiryStr == null) {
+        return null;
+      }
+      return DateTime.parse(expiryStr);
+    } catch (e) {
+      _logger.e('Error reading token expiry: $e');
+      return null;
+    }
+  }
+
+  /// 检查Token是否已过期
+  Future<bool> isTokenExpired() async {
+    final expiry = await getTokenExpiry();
+    if (expiry == null) {
+      // 无法确定过期时间，假设未过期
+      return false;
+    }
+
+    return DateTime.now().toUtc().isAfter(expiry);
+  }
+
+  /// 检查Token是否需要刷新（即将在5分钟内过期）
+  Future<bool> shouldRefreshToken() async {
+    final expiry = await getTokenExpiry();
+    if (expiry == null) {
+      // 无法确定过期时间，不需要刷新
+      return false;
+    }
+
+    final now = DateTime.now().toUtc();
+    final refreshTime = expiry.subtract(_refreshBeforeExpiry);
+
+    // 如果当前时间在刷新时间之后，则需要刷新
+    final shouldRefresh = now.isAfter(refreshTime);
+
+    if (shouldRefresh) {
+      _logger.i('Token should be refreshed (expires at: $expiry)');
+    }
+
+    return shouldRefresh;
+  }
+
+  /// 获取Token剩余有效时间
+  Future<Duration?> getTokenRemainingTime() async {
+    final expiry = await getTokenExpiry();
+    if (expiry == null) {
+      return null;
+    }
+
+    final now = DateTime.now().toUtc();
+    if (now.isAfter(expiry)) {
+      return Duration.zero;
+    }
+
+    return expiry.difference(now);
   }
 }

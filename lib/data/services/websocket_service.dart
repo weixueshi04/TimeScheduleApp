@@ -1,7 +1,17 @@
+import 'dart:async';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 import 'package:logger/logger.dart';
 import '../../core/constants/api_constants.dart';
 import 'token_service.dart';
+
+/// WebSocket连接状态
+enum ConnectionState {
+  disconnected,
+  connecting,
+  connected,
+  reconnecting,
+  failed,
+}
 
 /// WebSocket事件类型
 class WSEvents {
@@ -11,6 +21,10 @@ class WSEvents {
   static const String authenticate = 'authenticate';
   static const String authenticated = 'authenticated';
   static const String error = 'error';
+
+  // 心跳事件
+  static const String ping = 'ping';
+  static const String pong = 'pong';
 
   // 自习室事件
   static const String joinRoom = 'join_room';
@@ -45,6 +59,28 @@ class WebSocketService {
   final TokenService _tokenService;
   final Logger _logger = Logger();
 
+  // 连接状态
+  ConnectionState _connectionState = ConnectionState.disconnected;
+  ConnectionState get connectionState => _connectionState;
+
+  // 心跳定时器
+  Timer? _heartbeatTimer;
+  Timer? _pongTimeoutTimer;
+  static const Duration _heartbeatInterval = Duration(seconds: 30);
+  static const Duration _pongTimeout = Duration(seconds: 10);
+
+  // 重连机制
+  int _reconnectAttempts = 0;
+  static const int _maxReconnectAttempts = 5;
+  static const Duration _initialReconnectDelay = Duration(seconds: 1);
+  Timer? _reconnectTimer;
+
+  // 连接状态监听器
+  final _connectionStateController =
+      StreamController<ConnectionState>.broadcast();
+  Stream<ConnectionState> get connectionStateStream =>
+      _connectionStateController.stream;
+
   bool get isConnected => _socket?.connected ?? false;
 
   WebSocketService(this._tokenService);
@@ -57,6 +93,8 @@ class WebSocketService {
     }
 
     try {
+      _updateConnectionState(ConnectionState.connecting);
+
       final token = await _tokenService.getAccessToken();
       if (token == null) {
         throw Exception('No access token available');
@@ -66,8 +104,11 @@ class WebSocketService {
         ApiConstants.wsUrl,
         IO.OptionBuilder()
             .setTransports(['websocket'])
-            .enableAutoConnect()
+            .disableAutoConnect() // 禁用自动连接，我们手动管理
             .setAuth({'token': token})
+            .setReconnectionDelay(1000)
+            .setReconnectionDelayMax(5000)
+            .setReconnectionAttempts(_maxReconnectAttempts)
             .build(),
       );
 
@@ -77,6 +118,7 @@ class WebSocketService {
       _logger.i('WebSocket connecting to ${ApiConstants.wsUrl}');
     } catch (e) {
       _logger.e('Error connecting WebSocket: $e');
+      _updateConnectionState(ConnectionState.failed);
       rethrow;
     }
   }
@@ -85,10 +127,16 @@ class WebSocketService {
   void _setupEventHandlers() {
     _socket!.onConnect((_) {
       _logger.i('✅ WebSocket connected (ID: ${_socket!.id})');
+      _updateConnectionState(ConnectionState.connected);
+      _reconnectAttempts = 0; // 重置重连次数
+      _startHeartbeat(); // 启动心跳
     });
 
     _socket!.onDisconnect((_) {
       _logger.w('❌ WebSocket disconnected');
+      _stopHeartbeat(); // 停止心跳
+      _updateConnectionState(ConnectionState.disconnected);
+      _attemptReconnect(); // 尝试重连
     });
 
     _socket!.on(WSEvents.error, (data) {
@@ -98,16 +146,115 @@ class WebSocketService {
     _socket!.on(WSEvents.authenticated, (data) {
       _logger.i('✅ Authenticated as: ${data['user']['username']}');
     });
+
+    // 监听pong响应
+    _socket!.on(WSEvents.pong, (_) {
+      _logger.d('← Received pong');
+      _cancelPongTimeout();
+    });
+  }
+
+  /// 更新连接状态
+  void _updateConnectionState(ConnectionState newState) {
+    if (_connectionState != newState) {
+      _connectionState = newState;
+      _connectionStateController.add(newState);
+      _logger.d('Connection state changed to: $newState');
+    }
+  }
+
+  /// 启动心跳机制
+  void _startHeartbeat() {
+    _stopHeartbeat(); // 先停止旧的心跳
+
+    _heartbeatTimer = Timer.periodic(_heartbeatInterval, (timer) {
+      if (isConnected) {
+        _logger.d('→ Sending ping');
+        _socket!.emit(WSEvents.ping);
+
+        // 设置pong超时
+        _pongTimeoutTimer?.cancel();
+        _pongTimeoutTimer = Timer(_pongTimeout, () {
+          _logger.w('⚠ Pong timeout - connection may be dead');
+          _handleConnectionDead();
+        });
+      }
+    });
+
+    _logger.i('Heartbeat started (interval: $_heartbeatInterval)');
+  }
+
+  /// 停止心跳机制
+  void _stopHeartbeat() {
+    _heartbeatTimer?.cancel();
+    _heartbeatTimer = null;
+    _pongTimeoutTimer?.cancel();
+    _pongTimeoutTimer = null;
+    _logger.d('Heartbeat stopped');
+  }
+
+  /// 取消pong超时
+  void _cancelPongTimeout() {
+    _pongTimeoutTimer?.cancel();
+    _pongTimeoutTimer = null;
+  }
+
+  /// 处理连接死亡
+  void _handleConnectionDead() {
+    _logger.w('Connection appears dead, forcing disconnect and reconnect');
+    disconnect();
+    _attemptReconnect();
+  }
+
+  /// 尝试重连
+  void _attemptReconnect() {
+    if (_reconnectAttempts >= _maxReconnectAttempts) {
+      _logger.e('Max reconnect attempts reached ($_maxReconnectAttempts)');
+      _updateConnectionState(ConnectionState.failed);
+      return;
+    }
+
+    _reconnectAttempts++;
+    _updateConnectionState(ConnectionState.reconnecting);
+
+    // 计算退避延迟（指数退避）
+    final delay = _initialReconnectDelay * (1 << (_reconnectAttempts - 1));
+    final cappedDelay = delay > const Duration(seconds: 30)
+        ? const Duration(seconds: 30)
+        : delay;
+
+    _logger.i(
+      'Attempting reconnect #$_reconnectAttempts in ${cappedDelay.inSeconds}s',
+    );
+
+    _reconnectTimer?.cancel();
+    _reconnectTimer = Timer(cappedDelay, () {
+      _logger.i('Reconnecting... (attempt $_reconnectAttempts)');
+      connect();
+    });
   }
 
   /// 断开连接
   void disconnect() {
+    _stopHeartbeat();
+    _reconnectTimer?.cancel();
+    _reconnectTimer = null;
+
     if (_socket != null) {
       _socket!.disconnect();
       _socket!.dispose();
       _socket = null;
       _logger.i('WebSocket disconnected');
     }
+
+    _updateConnectionState(ConnectionState.disconnected);
+  }
+
+  /// 释放资源
+  void dispose() {
+    disconnect();
+    _connectionStateController.close();
+    _logger.i('WebSocketService disposed');
   }
 
   /// 发送事件
