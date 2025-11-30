@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Reusable text field widget with consistent styling
 class AppTextField extends StatelessWidget {
@@ -61,35 +64,38 @@ class AppTextField extends StatelessWidget {
         prefixIcon: prefixIcon != null ? Icon(prefixIcon) : null,
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade300),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+          borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.blue, width: 2),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
         ),
         focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+          borderSide: const BorderSide(color: AppColors.error, width: 2),
         ),
         disabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
+          borderSide: const BorderSide(color: AppColors.borderLight),
         ),
         filled: !enabled,
-        fillColor: enabled ? null : Colors.grey.shade100,
+        fillColor: enabled ? null : AppColors.surfaceVariant,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.lg,
         ),
+        labelStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
+        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint),
+        errorStyle: AppTextStyles.error,
       ),
       keyboardType: keyboardType,
       textInputAction: textInputAction,
@@ -130,10 +136,10 @@ class AppSearchField extends StatelessWidget {
       controller: controller,
       decoration: InputDecoration(
         hintText: hint ?? '搜索...',
-        prefixIcon: const Icon(Icons.search, color: Colors.grey),
+        prefixIcon: const Icon(Icons.search, color: AppColors.textHint),
         suffixIcon: controller != null && controller!.text.isNotEmpty
             ? IconButton(
-                icon: const Icon(Icons.clear, size: 20),
+                icon: const Icon(Icons.clear, size: AppSpacing.iconMedium),
                 onPressed: () {
                   controller!.clear();
                   if (onClear != null) onClear!();
@@ -142,15 +148,16 @@ class AppSearchField extends StatelessWidget {
               )
             : null,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(AppSpacing.radiusCircle),
           borderSide: BorderSide.none,
         ),
         filled: true,
-        fillColor: Colors.grey.shade100,
+        fillColor: AppColors.surfaceVariant,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
         ),
+        hintStyle: AppTextStyles.bodyMedium.copyWith(color: AppColors.textHint),
       ),
       onChanged: onChanged,
       onSubmitted: onSubmitted,
@@ -196,7 +203,7 @@ class _AppPasswordFieldState extends State<AppPasswordField> {
       suffixIcon: IconButton(
         icon: Icon(
           _obscureText ? Icons.visibility_off : Icons.visibility,
-          color: Colors.grey,
+          color: AppColors.textHint,
         ),
         onPressed: () {
           setState(() {

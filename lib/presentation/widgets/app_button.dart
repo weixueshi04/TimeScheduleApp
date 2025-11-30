@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Reusable button widget with consistent styling
 class AppButton extends StatelessWidget {
@@ -35,9 +38,9 @@ class AppButton extends StatelessWidget {
     this.icon,
     this.width,
   })  : isOutlined = false,
-        backgroundColor = Colors.blue,
+        backgroundColor = AppColors.primary,
         foregroundColor = Colors.white,
-        height = 48,
+        height = AppSpacing.buttonHeight,
         padding = null;
 
   const AppButton.secondary({
@@ -49,8 +52,8 @@ class AppButton extends StatelessWidget {
     this.width,
   })  : isOutlined = true,
         backgroundColor = null,
-        foregroundColor = Colors.blue,
-        height = 48,
+        foregroundColor = AppColors.primary,
+        height = AppSpacing.buttonHeight,
         padding = null;
 
   const AppButton.danger({
@@ -61,9 +64,9 @@ class AppButton extends StatelessWidget {
     this.icon,
     this.width,
   })  : isOutlined = false,
-        backgroundColor = Colors.red,
+        backgroundColor = AppColors.error,
         foregroundColor = Colors.white,
-        height = 48,
+        height = AppSpacing.buttonHeight,
         padding = null;
 
   @override
@@ -73,11 +76,11 @@ class AppButton extends StatelessWidget {
     final Widget buttonChild = isLoading
         ? SizedBox(
             width: 20,
-            height: 20,
+            height: AppSpacing.iconMedium,
             child: CircularProgressIndicator(
               strokeWidth: 2,
               valueColor: AlwaysStoppedAnimation<Color>(
-                isOutlined ? (foregroundColor ?? Colors.blue) : Colors.white,
+                isOutlined ? (foregroundColor ?? AppColors.primary) : Colors.white,
               ),
             ),
           )
@@ -86,15 +89,12 @@ class AppButton extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               if (icon != null) ...[
-                Icon(icon, size: 20),
-                const SizedBox(width: 8),
+                Icon(icon, size: AppSpacing.iconMedium),
+                const SizedBox(width: AppSpacing.sm),
               ],
               Text(
                 text,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppTextStyles.button,
               ),
             ],
           );
@@ -108,13 +108,16 @@ class AppButton extends StatelessWidget {
           style: OutlinedButton.styleFrom(
             foregroundColor: foregroundColor,
             side: BorderSide(
-              color: foregroundColor ?? Colors.blue,
+              color: foregroundColor ?? AppColors.primary,
               width: 1.5,
             ),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
             ),
-            padding: padding ?? const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            padding: padding ?? const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xl,
+              vertical: AppSpacing.md,
+            ),
           ),
           child: buttonChild,
         ),
@@ -132,10 +135,14 @@ class AppButton extends StatelessWidget {
           disabledBackgroundColor: backgroundColor?.withOpacity(0.6),
           disabledForegroundColor: foregroundColor?.withOpacity(0.6),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMedium),
           ),
-          padding: padding ?? const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+          padding: padding ?? const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xl,
+            vertical: AppSpacing.md,
+          ),
           elevation: 0,
+          shadowColor: AppColors.shadow,
         ),
         child: buttonChild,
       ),

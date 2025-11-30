@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Empty state widget to show when there's no data
 class EmptyState extends StatelessWidget {
@@ -28,8 +31,8 @@ class EmptyState extends StatelessWidget {
     this.actionText,
     this.onAction,
   })  : icon = Icons.inbox,
-        iconColor = Colors.grey,
-        iconSize = 80;
+        iconColor = AppColors.textHint,
+        iconSize = AppSpacing.iconXXLarge * 2;
 
   const EmptyState.noTasks({
     super.key,
@@ -38,8 +41,8 @@ class EmptyState extends StatelessWidget {
     this.actionText,
     this.onAction,
   })  : icon = Icons.task_alt,
-        iconColor = Colors.grey,
-        iconSize = 80;
+        iconColor = AppColors.textHint,
+        iconSize = AppSpacing.iconXXLarge * 2;
 
   const EmptyState.noStudyRooms({
     super.key,
@@ -48,8 +51,8 @@ class EmptyState extends StatelessWidget {
     this.actionText,
     this.onAction,
   })  : icon = Icons.meeting_room,
-        iconColor = Colors.grey,
-        iconSize = 80;
+        iconColor = AppColors.textHint,
+        iconSize = AppSpacing.iconXXLarge * 2;
 
   const EmptyState.noResults({
     super.key,
@@ -58,8 +61,8 @@ class EmptyState extends StatelessWidget {
     this.actionText,
     this.onAction,
   })  : icon = Icons.search_off,
-        iconColor = Colors.grey,
-        iconSize = 80;
+        iconColor = AppColors.textHint,
+        iconSize = AppSpacing.iconXXLarge * 2;
 
   const EmptyState.networkError({
     super.key,
@@ -68,54 +71,47 @@ class EmptyState extends StatelessWidget {
     this.actionText = '重试',
     this.onAction,
   })  : icon = Icons.wifi_off,
-        iconColor = Colors.red,
-        iconSize = 80;
+        iconColor = AppColors.error,
+        iconSize = AppSpacing.iconXXLarge * 2;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
               size: iconSize,
-              color: iconColor ?? Colors.grey,
+              color: iconColor ?? AppColors.textHint,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
+              style: AppTextStyles.headingSmall,
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 subtitle!,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
             if (actionText != null && onAction != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
               ElevatedButton(
                 onPressed: onAction,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 12,
+                    horizontal: AppSpacing.xxxl,
+                    vertical: AppSpacing.md,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusCircle),
                   ),
                 ),
                 child: Text(actionText!),
@@ -154,7 +150,7 @@ class ErrorState extends StatelessWidget {
     this.onAction,
   })  : title = '出错了',
         icon = Icons.error_outline,
-        iconColor = Colors.red;
+        iconColor = AppColors.error;
 
   const ErrorState.network({
     super.key,
@@ -163,7 +159,7 @@ class ErrorState extends StatelessWidget {
     this.onAction,
   })  : title = '网络连接失败',
         icon = Icons.wifi_off,
-        iconColor = Colors.red;
+        iconColor = AppColors.error;
 
   const ErrorState.notFound({
     super.key,
@@ -172,55 +168,48 @@ class ErrorState extends StatelessWidget {
     this.onAction,
   })  : title = '未找到',
         icon = Icons.search_off,
-        iconColor = Colors.orange;
+        iconColor = AppColors.warning;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxxl),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
-              size: 80,
+              size: AppSpacing.iconXXLarge * 2,
               color: iconColor,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xxl),
             Text(
               title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
+              style: AppTextStyles.headingSmall,
               textAlign: TextAlign.center,
             ),
             if (subtitle != null) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 subtitle!,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey,
-                ),
+                style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
                 textAlign: TextAlign.center,
               ),
             ],
             if (actionText != null && onAction != null) ...[
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xxl),
               ElevatedButton(
                 onPressed: onAction,
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 32,
-                    vertical: 12,
+                    horizontal: AppSpacing.xxxl,
+                    vertical: AppSpacing.md,
                   ),
                   backgroundColor: iconColor,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(24),
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusCircle),
                   ),
                 ),
                 child: Text(actionText!),

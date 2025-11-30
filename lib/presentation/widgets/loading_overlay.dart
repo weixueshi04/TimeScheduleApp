@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_text_styles.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Loading overlay widget that shows a loading indicator
 class LoadingOverlay extends StatelessWidget {
@@ -21,26 +24,44 @@ class LoadingOverlay extends StatelessWidget {
       children: [
         child,
         if (isLoading)
-          Container(
-            color: backgroundColor ?? Colors.black.withOpacity(0.5),
-            child: Center(
-              child: Card(
-                margin: const EdgeInsets.all(32),
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const CircularProgressIndicator(),
-                      if (message != null) ...[
-                        const SizedBox(height: 16),
-                        Text(
-                          message!,
-                          style: const TextStyle(fontSize: 16),
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ],
+          AnimatedOpacity(
+            opacity: 1.0,
+            duration: const Duration(milliseconds: 200),
+            child: Container(
+              color: backgroundColor ?? AppColors.overlay,
+              child: Center(
+                child: TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOut,
+                  builder: (context, value, child) {
+                    return Transform.scale(
+                      scale: value,
+                      child: Opacity(
+                        opacity: value,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: Card(
+                    margin: const EdgeInsets.all(AppSpacing.xxxl),
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.xxl),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const CircularProgressIndicator(),
+                          if (message != null) ...[
+                            const SizedBox(height: AppSpacing.lg),
+                            Text(
+                              message!,
+                              style: AppTextStyles.bodyMedium,
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -71,13 +92,13 @@ class LoadingIndicator extends StatelessWidget {
           CircularProgressIndicator(
             valueColor: color != null
                 ? AlwaysStoppedAnimation<Color>(color!)
-                : null,
+                : const AlwaysStoppedAnimation<Color>(AppColors.primary),
           ),
           if (message != null) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               message!,
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+              style: AppTextStyles.bodyMedium.copyWith(color: AppColors.textSecondary),
               textAlign: TextAlign.center,
             ),
           ],
@@ -130,16 +151,16 @@ class LoadingDialog {
           elevation: 0,
           child: Card(
             child: Padding(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(AppSpacing.xxl),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const CircularProgressIndicator(),
                   if (message != null) ...[
-                    const SizedBox(height: 16),
+                    const SizedBox(height: AppSpacing.lg),
                     Text(
                       message,
-                      style: const TextStyle(fontSize: 16),
+                      style: AppTextStyles.bodyMedium,
                       textAlign: TextAlign.center,
                     ),
                   ],
@@ -177,7 +198,7 @@ class AppLinearProgressBar extends StatelessWidget {
           ? LinearProgressIndicator(
               valueColor: color != null
                   ? AlwaysStoppedAnimation<Color>(color!)
-                  : null,
+                  : const AlwaysStoppedAnimation<Color>(AppColors.primary),
             )
           : null,
     );

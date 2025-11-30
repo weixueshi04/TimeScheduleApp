@@ -1,6 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+// Theme
+import 'core/theme/app_theme.dart';
+import 'core/theme/app_colors.dart';
+import 'core/theme/app_text_styles.dart';
+import 'core/theme/app_spacing.dart';
+
 // Providers
 import 'business/providers/auth_provider.dart';
 import 'business/providers/study_room_provider.dart';
@@ -87,10 +93,7 @@ class MyApp extends StatelessWidget {
       child: MaterialApp(
         title: 'TimeScheduleApp v2.0',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-          useMaterial3: true,
-        ),
+        theme: AppTheme.lightTheme,
         home: Consumer<AuthProvider>(
           builder: (context, authProvider, _) {
             // 根据认证状态显示不同页面
